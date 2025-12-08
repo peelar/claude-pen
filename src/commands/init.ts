@@ -9,12 +9,13 @@ import type { ClaudePenConfig } from '../types.js';
 const DIRECTORIES = [
   '.claude-pen/prompts',
   '.claude-pen/prompts/format',
-  'corpus/blog',
-  'corpus/linkedin',
-  'corpus/substack',
-  'corpus/twitter',
-  'drafts',
-  'raw',
+  'writing/import',
+  'writing/raw',
+  'writing/drafts',
+  'writing/content/blog',
+  'writing/content/linkedin',
+  'writing/content/substack',
+  'writing/content/twitter',
 ];
 
 /**
@@ -92,7 +93,7 @@ export async function init(): Promise<void> {
   // Create .gitignore if it doesn't exist
   const gitignorePath = path.join(process.cwd(), '.gitignore');
   if (!fs.existsSync(gitignorePath)) {
-    fs.writeFileSync(gitignorePath, '# Claude Pen\nraw/\ndrafts/\n');
+    fs.writeFileSync(gitignorePath, '# Claude Pen\nwriting/raw/\nwriting/drafts/\nwriting/import/\n');
     console.log(chalk.dim('  .gitignore'));
   }
 
@@ -101,11 +102,12 @@ export async function init(): Promise<void> {
 
   console.log('Next steps:');
   console.log(chalk.cyan('  1. Add existing writing:'));
-  console.log(`     claude-pen ingest ./my-posts --platform blog\n`);
-  console.log(chalk.cyan('  2. Analyze your style:'));
-  console.log('     claude-pen analyze\n');
-  console.log(chalk.cyan('  3. Start drafting:'));
-  console.log('     claude-pen draft raw/my-notes.md\n');
+  console.log(`     Drop files in writing/import/, then run:\n`);
+  console.log(`     claude-pen ingest --platform blog\n`);
+  console.log(chalk.cyan('  2. Or import from specific directory:'));
+  console.log('     claude-pen ingest ./my-posts --platform blog\n');
+  console.log(chalk.cyan('  3. Review drafts and publish:'));
+  console.log('     Check writing/drafts/, then move to writing/content/[platform]/\n');
 
   // API key reminder
   console.log(chalk.dim(`Remember to set ${apiKeyEnv} in your environment.`));

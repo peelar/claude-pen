@@ -16,7 +16,7 @@ Claude Pen is a CLI tool that helps you maintain consistency in your writing by 
 
 ## Status
 
-🚧 **Early Development** - Currently implements workspace initialization. Additional commands (ingest, analyze, draft) are in development.
+🚧 **Early Development** - Currently implements workspace initialization and content ingestion. Additional commands (analyze, draft) are in development.
 
 ## Installation
 
@@ -58,6 +58,7 @@ bun run src/index.ts init
 ```
 
 This interactive command will:
+
 1. Prompt for your name
 2. Ask which LLM provider you want to use (Anthropic or OpenAI)
 3. Let you configure the model and API key environment variable
@@ -69,14 +70,16 @@ your-workspace/
 │   ├── config.yaml           # Your configuration
 │   └── prompts/              # Prompt templates
 │       └── format/           # Format-specific prompts
-├── corpus/                   # Your writing samples
-│   ├── blog/
-│   ├── linkedin/
-│   ├── substack/
-│   └── twitter/
-├── drafts/                   # Generated drafts
-├── raw/                      # Raw notes and ideas
-└── .gitignore               # Excludes raw/ and drafts/
+├── writing/                  # All your writing in one place
+│   ├── import/               # Drop existing content here to ingest
+│   ├── raw/                  # Unstructured thoughts and ideas
+│   ├── drafts/               # AI-processed content pending review
+│   └── content/              # Finalized content organized by platform
+│       ├── blog/
+│       ├── linkedin/
+│       ├── substack/
+│       └── twitter/
+└── .gitignore
 ```
 
 ### Configuration Example
@@ -107,11 +110,59 @@ Add this to your `~/.bashrc`, `~/.zshrc`, or equivalent to make it permanent.
 
 ## Available Commands
 
-- `claude-pen init` - Initialize a new workspace
+### Initialize a New Workspace
+
+```bash
+claude-pen init
+```
+
+Interactive setup that creates your workspace structure and configuration.
+
+### Ingest Existing Writing
+
+Batch import existing markdown files into your drafts for review:
+
+```bash
+claude-pen ingest [directory] --platform <platform>
+```
+
+**Arguments:**
+
+- `[directory]` - Optional path to directory containing markdown files (defaults to `writing/import/`)
+- `--platform` - Target platform: `blog`, `linkedin`, `substack`, or `twitter`
+
+**Features:**
+
+- Automatically extracts title, date, tags, and summary using AI
+- Skips files that already have metadata
+- Generates safe filenames with date prefixes
+- Writes to `writing/drafts/` for review
+- Removes processed files from source directory
+
+**Workflow:**
+
+```
+writing/import/ → ingest → writing/drafts/ → review → writing/content/[platform]/
+```
+
+**Examples:**
+
+```bash
+# Import from default location (writing/import/)
+claude-pen ingest --platform blog
+
+# Import from specific directory
+claude-pen ingest ./my-old-blog --platform blog
+
+# Import LinkedIn articles
+claude-pen ingest ./linkedin-drafts --platform linkedin
+```
+
+**Next Steps:**
+After ingesting, review files in `writing/drafts/`, then publish to `writing/content/[platform]/`.
 
 ### Coming Soon
 
-- `claude-pen ingest <path> --platform <blog|linkedin|substack|twitter>` - Import existing writing
 - `claude-pen analyze` - Analyze your writing style
 - `claude-pen draft <input-file>` - Generate a draft in your style
 
@@ -143,11 +194,15 @@ claude-pen/
 │   ├── index.ts              # CLI entry point
 │   ├── types.ts              # TypeScript type definitions
 │   ├── commands/             # Command implementations
-│   │   └── init.ts           # Init command
+│   │   ├── init.ts           # Init command
+│   │   └── ingest.ts         # Ingest command
 │   ├── lib/                  # Utility libraries
 │   │   ├── config.ts         # Configuration management
-│   │   └── files.ts          # File utilities
+│   │   ├── files.ts          # File utilities
+│   │   ├── llm.ts            # LLM integration
+│   │   └── prompts.ts        # Prompt management
 │   └── prompts/              # Prompt templates
+│       └── ingest.md         # Ingest metadata extraction
 ├── thoughts/                 # Research and planning docs
 └── .claude/                  # Claude Code configuration
 ```
