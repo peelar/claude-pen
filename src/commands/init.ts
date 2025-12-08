@@ -57,18 +57,9 @@ export async function init(): Promise<void> {
 
   console.log(chalk.dim('\nLLM Configuration (press Enter for defaults)'));
 
-  const providerInput = await prompt('Provider (anthropic/openai)', 'anthropic');
-  const provider = providerInput === 'openai' ? 'openai' : 'anthropic';
-
-  const defaultModel = provider === 'anthropic'
-    ? 'claude-sonnet-4-20250514'
-    : 'gpt-4o';
-  const model = await prompt('Model', defaultModel);
-
-  const defaultApiKeyEnv = provider === 'anthropic'
-    ? 'ANTHROPIC_API_KEY'
-    : 'OPENAI_API_KEY';
-  const apiKeyEnv = await prompt('API key environment variable', defaultApiKeyEnv);
+  const provider = 'anthropic';
+  const model = await prompt('Model', 'claude-sonnet-4-20250514');
+  const apiKeyEnv = await prompt('API key environment variable', 'ANTHROPIC_API_KEY');
 
   // Create directories
   console.log(chalk.dim('\nCreating directories...'));
@@ -81,7 +72,7 @@ export async function init(): Promise<void> {
   const config: ClaudePenConfig = {
     author,
     llm: {
-      provider: provider as 'anthropic' | 'openai',
+      provider,
       model,
       apiKeyEnv,
     },

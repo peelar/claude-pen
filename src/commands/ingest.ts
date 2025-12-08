@@ -32,7 +32,7 @@ interface ExtractedMetadata {
  * Parse LLM response as YAML metadata
  * Handles markdown code fences and invalid YAML gracefully
  */
-function parseMetadata(response: string): ExtractedMetadata {
+function parseMetadata(response: string): { metadata: ExtractedMetadata; warning?: string } {
   // Clean up response - remove markdown code fences
   const cleaned = response
     .replace(/```ya?ml\n?/gi, '')
@@ -42,18 +42,22 @@ function parseMetadata(response: string): ExtractedMetadata {
   try {
     const parsed = yaml.parse(cleaned);
     return {
-      title: parsed.title || 'Untitled',
-      date: parsed.date || null,
-      tags: Array.isArray(parsed.tags) ? parsed.tags : [],
-      summary: parsed.summary || '',
+      metadata: {
+        title: parsed.title || 'Untitled',
+        date: parsed.date || null,
+        tags: Array.isArray(parsed.tags) ? parsed.tags : [],
+        summary: parsed.summary || '',
+      }
     };
   } catch (error) {
-    console.error(chalk.yellow('  Warning: Could not parse metadata, using defaults'));
     return {
-      title: 'Untitled',
-      date: null,
-      tags: [],
-      summary: '',
+      metadata: {
+        title: 'Untitled',
+        date: null,
+        tags: [],
+        summary: '',
+      },
+      warning: 'Could not parse metadata, using defaults'
     };
   }
 }
@@ -94,7 +98,9 @@ async function ingestFile(
     silent: true,
   });
 
-  const metadata = parseMetadata(response);
+  const { metadata, warning } = parseMetadata(response);
+  // Note: warning is silently ignored to avoid interrupting spinner operation
+  // The file will still be processed successfully with default metadata
 
   // Build frontmatter
   const outputFrontmatter: Record<string, unknown> = {

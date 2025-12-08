@@ -133,7 +133,9 @@ export async function analyze(): Promise<void> {
 
     if (allSamples.length === 0) {
       spinner.fail('No writing samples found');
-      console.log(chalk.yellow('\nPublish some writing first:'));
+
+      // Add extra spacing to ensure clean terminal transition
+      console.log(chalk.yellow('\n\nPublish some writing first:'));
       console.log(chalk.cyan('  1. Ingest: claude-pen ingest --platform blog'));
       console.log(chalk.cyan('  2. Review: Check writing/drafts/'));
       console.log(chalk.cyan('  3. Publish: Move files to writing/content/blog/'));
@@ -144,10 +146,11 @@ export async function analyze(): Promise<void> {
 
     const stats = selectRepresentativeSamples(allSamples);
 
-    // Stop spinner to print stats cleanly
-    spinner.stop();
+    // Terminate spinner cleanly before console output
+    spinner.succeed(`Selected ${stats.totalSelected} representative samples`);
 
     // Print platform-by-platform breakdown
+    console.log();  // Extra spacing for clean transition
     for (const [platform, platformStats] of stats.byPlatform.entries()) {
       console.log(
         chalk.dim(
@@ -160,9 +163,10 @@ export async function analyze(): Promise<void> {
         `  Total: ${stats.totalSamples} samples, ${stats.totalSelected} included (~${Math.round(stats.totalChars / 1000)}k chars)`
       )
     );
+    console.log();  // Extra spacing before new spinner
 
-    // Restart spinner for next phase
-    spinner.start(`Formatting ${stats.totalSelected} samples for analysis`);
+    // Create new spinner for next phase
+    const formatSpinner = ora(`Formatting ${stats.totalSelected} samples for analysis`).start();
 
     // Format samples for analysis
     const formattedSamples = formatSamples(stats.selected);
@@ -175,7 +179,7 @@ export async function analyze(): Promise<void> {
       platforms,
     });
 
-    spinner.text = 'Analyzing writing style';
+    formatSpinner.text = 'Analyzing writing style';
 
     // Call LLM
     const styleGuide = await complete(prompt, {
@@ -184,7 +188,7 @@ export async function analyze(): Promise<void> {
       silent: true,
     });
 
-    spinner.text = `Saving style guide to ${STYLE_GUIDE_PATH}`;
+    formatSpinner.text = `Saving style guide to ${STYLE_GUIDE_PATH}`;
 
     const outputPath = getPath(STYLE_GUIDE_PATH);
     const frontmatter = {
@@ -195,7 +199,7 @@ export async function analyze(): Promise<void> {
 
     writeMarkdown(outputPath, frontmatter, styleGuide);
 
-    spinner.succeed(`Style guide saved to ${STYLE_GUIDE_PATH}`);
+    formatSpinner.succeed(`Style guide saved to ${STYLE_GUIDE_PATH}`);
 
     // Summary
     console.log(chalk.bold('\n✓ Style Guide Generated'));

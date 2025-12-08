@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import ora from 'ora';
 import { loadConfig } from './config.js';
+import { validateEnv, getEffectiveModel, EnvValidationError, formatEnvError } from './env.js';
 
 export interface LLMOptions {
   system?: string;
@@ -34,34 +35,30 @@ function createAnthropicClient(apiKey: string, model: string): LLMClient {
 }
 
 /**
- * Create OpenAI client (placeholder for future)
- */
-function createOpenAIClient(apiKey: string, model: string): LLMClient {
-  // TODO: Implement when adding OpenAI support
-  throw new Error('OpenAI provider not yet implemented');
-}
-
-/**
  * Get configured LLM client
  */
 export function getLLMClient(): LLMClient {
   const config = loadConfig();
-  const apiKey = process.env[config.llm.apiKeyEnv];
 
-  if (!apiKey) {
-    throw new Error(
-      `API key not found. Set ${config.llm.apiKeyEnv} environment variable.`
-    );
+  // Validate environment variables
+  let env;
+  try {
+    env = validateEnv(config);
+  } catch (error) {
+    if (error instanceof EnvValidationError) {
+      throw new Error(formatEnvError(error));
+    }
+    throw error;
   }
 
-  switch (config.llm.provider) {
-    case 'anthropic':
-      return createAnthropicClient(apiKey, config.llm.model);
-    case 'openai':
-      return createOpenAIClient(apiKey, config.llm.model);
-    default:
-      throw new Error(`Unknown provider: ${config.llm.provider}`);
+  if (config.llm.provider !== 'anthropic') {
+    throw new Error(`Unknown provider: ${config.llm.provider}`);
   }
+
+  // Use model from env var if set, otherwise fall back to config
+  const model = getEffectiveModel(env, config);
+
+  return createAnthropicClient(env.apiKey, model);
 }
 
 /**
