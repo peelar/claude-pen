@@ -24,6 +24,7 @@ When the user describes a feature or change:
      - Code examples where helpful
      - Automated verification commands
      - Manual verification checklist
+   - **Always include a Documentation phase** to update README.md
 
 3. **Success criteria for each phase**:
    - Automated checks (tests, build, lint, types)
@@ -70,6 +71,33 @@ When the user describes a feature or change:
 
 ## Phase 2: [Phase Name]
 [Continue pattern...]
+
+---
+
+## Phase N: Documentation
+
+### Changes Required
+
+#### 1. Update README.md
+**File**: `README.md`
+**Changes**: Document new feature/command
+
+- Update "Available Commands" section with new command
+- Add usage examples and options
+- Update "Coming Soon" section if applicable
+- Add any new configuration or setup steps
+- Update project structure diagram if files added
+
+### Success Criteria
+
+#### Automated Verification
+- [ ] README renders correctly in markdown preview
+
+#### Manual Verification
+- [ ] Command is documented with examples
+- [ ] All options and flags are explained
+- [ ] Usage is clear for new users
+- [ ] Links and references are valid
 
 ---
 

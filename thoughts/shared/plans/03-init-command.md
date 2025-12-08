@@ -420,7 +420,7 @@ If issues are discovered after implementation:
 - [x] Test 4: Existing .gitignore (verified - passes)
 
 ### Documentation
-- [ ] Update README if needed (command usage)
+- [x] Update README if needed (command usage)
 - [x] Mark plan phases as complete
 
 ---

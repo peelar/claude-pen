@@ -21,6 +21,7 @@ When given a plan file or description:
    - Run automated verification commands
    - Report results
    - Update checkboxes in the plan
+   - **For Documentation phase**: Ensure README.md reflects all new commands, options, and usage examples
    - Handle any blockers by:
      - Clearly explaining the issue
      - Suggesting resolution steps
@@ -34,6 +35,7 @@ When given a plan file or description:
 5. **On completion**:
    - Summarize all changes made
    - List any manual verification needed
+   - **Verify README.md was updated** with new features/commands
    - Suggest next steps
 
 ## Blocker Handling
