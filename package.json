@@ -1,0 +1,28 @@
+{
+  "name": "claude-pen",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "claude-pen": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "bunx biome check src/"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^24.10.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
+    "chalk": "^5.6.2",
+    "commander": "^14.0.2",
+    "glob": "^13.0.0",
+    "ora": "^9.0.0",
+    "yaml": "^2.8.2"
+  }
+}
