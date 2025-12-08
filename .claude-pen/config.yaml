@@ -1,0 +1,5 @@
+author: Adrian
+llm:
+  provider: anthropic
+  model: claude-sonnet-4-20250514
+  apiKeyEnv: ANTHROPIC_API_KEY
