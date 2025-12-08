@@ -5,6 +5,7 @@ import { loadConfig } from './config.js';
 export interface LLMOptions {
   system?: string;
   maxTokens?: number;
+  silent?: boolean;
 }
 
 export interface LLMClient {
@@ -70,15 +71,15 @@ export async function complete(
   prompt: string,
   options: LLMOptions = {}
 ): Promise<string> {
-  const spinner = ora('Thinking...').start();
+  const spinner = options.silent ? null : ora('Thinking...').start();
 
   try {
     const client = getLLMClient();
     const result = await client.complete(prompt, options);
-    spinner.succeed('Done');
+    spinner?.succeed('Done');
     return result;
   } catch (error) {
-    spinner.fail('Failed');
+    spinner?.fail('Failed');
     throw error;
   }
 }

@@ -1,7 +1,7 @@
 import { readdir } from 'fs/promises';
 import path from 'path';
 import chalk from 'chalk';
-import ora from 'ora';
+import ora, { type Ora } from 'ora';
 import yaml from 'yaml';
 
 import type { Platform, ArticleFrontmatter } from '../types.js';
@@ -18,6 +18,7 @@ import { complete } from '../lib/llm.js';
 
 interface IngestOptions {
   platform: Platform;
+  published?: boolean;
 }
 
 interface ExtractedMetadata {
@@ -68,12 +69,14 @@ function generateFilename(metadata: ExtractedMetadata): string {
 }
 
 /**
- * Process a single file: extract metadata and write to corpus
+ * Process a single file: extract metadata and write to destination
  */
 async function ingestFile(
   filePath: string,
   platform: Platform,
-  promptTemplate: string
+  promptTemplate: string,
+  spinner: Ora,
+  destinationDir: string
 ): Promise<{ success: boolean; outputPath?: string; skipped?: boolean }> {
   const { frontmatter, content } = readMarkdown(filePath);
 
@@ -83,10 +86,12 @@ async function ingestFile(
   }
 
   // Extract metadata via LLM
+  spinner.text = `${path.basename(filePath)} - extracting metadata...`;
   const prompt = interpolate(promptTemplate, { content });
   const response = await complete(prompt, {
     system: 'You are a metadata extraction assistant.',
     maxTokens: 500,
+    silent: true,
   });
 
   const metadata = parseMetadata(response);
@@ -103,9 +108,9 @@ async function ingestFile(
 
   // Generate output path
   const filename = generateFilename(metadata);
-  const outputPath = getPath('writing', 'drafts', filename);
+  const outputPath = path.join(destinationDir, filename);
 
-  // Write to drafts
+  // Write to destination
   writeMarkdown(outputPath, outputFrontmatter, content);
 
   return { success: true, outputPath };
@@ -118,10 +123,19 @@ export async function ingest(
   dir: string | undefined,
   options: IngestOptions
 ): Promise<void> {
-  const { platform } = options;
+  const { platform, published } = options;
 
   // Default to writing/import if no directory specified
   const sourceDir = dir || getPath('writing', 'import');
+
+  // Determine destination based on published flag
+  const destinationDir = published
+    ? getPath('writing', 'content', platform)
+    : getPath('writing', 'drafts');
+
+  const destinationLabel = published
+    ? `writing/content/${platform}/`
+    : 'writing/drafts/';
 
   // Validate platform
   const validPlatforms: Platform[] = ['blog', 'linkedin', 'substack', 'twitter'];
@@ -149,7 +163,7 @@ export async function ingest(
     return;
   }
 
-  console.log(chalk.bold(`\n📥 Ingesting ${files.length} files into writing/drafts/\n`));
+  console.log(chalk.bold(`\n📥 Ingesting ${files.length} files into ${destinationLabel}\n`));
 
   // Process files
   let ingested = 0;
@@ -161,7 +175,7 @@ export async function ingest(
     const spinner = ora(`Processing ${filename}`).start();
 
     try {
-      const result = await ingestFile(filePath, platform, promptTemplate);
+      const result = await ingestFile(filePath, platform, promptTemplate, spinner, destinationDir);
 
       if (result.skipped) {
         spinner.info(`${filename} - skipped (already has metadata)`);
@@ -186,6 +200,10 @@ export async function ingest(
   console.log(`  Failed:   ${chalk.red(failed)}`);
 
   if (ingested > 0) {
-    console.log(chalk.cyan(`\nNext: Review files in writing/drafts/, then publish to writing/content/`));
+    if (published) {
+      console.log(chalk.cyan(`\nFiles are ready for analysis in ${destinationLabel}`));
+    } else {
+      console.log(chalk.cyan(`\nNext: Review files in writing/drafts/, then publish to writing/content/${platform}/`));
+    }
   }
 }
