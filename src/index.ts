@@ -3,6 +3,7 @@ import { Command } from 'commander';
 import { init } from './commands/init.js';
 import { ingest } from './commands/ingest.js';
 import { analyze } from './commands/analyze.js';
+import { draft } from './commands/draft.js';
 
 const program = new Command();
 
@@ -45,6 +46,21 @@ program
   .action(async () => {
     try {
       await analyze();
+      process.exit(0);
+    } catch (error) {
+      console.error('Command failed:', error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('draft [file]')
+  .description('Transform raw notes into a structured draft')
+  .option('--stdin', 'Read input from stdin instead of a file')
+  .option('-o, --output <path>', 'Output file path (default: writing/drafts/<basename>.md or draft-<date>.md)')
+  .action(async (file, options) => {
+    try {
+      await draft(file, options);
       process.exit(0);
     } catch (error) {
       console.error('Command failed:', error);

@@ -16,7 +16,7 @@ Claude Pen is a CLI tool that helps you maintain consistency in your writing by 
 
 ## Status
 
-🚧 **Early Development** - Currently implements workspace initialization and content ingestion. Additional commands (analyze, draft) are in development.
+🚧 **Early Development** - Currently implements workspace initialization, content ingestion, style analysis, and draft generation. Refine command in development.
 
 ## Installation
 
@@ -161,10 +161,93 @@ claude-pen ingest ./linkedin-drafts --platform linkedin
 **Next Steps:**
 After ingesting, review files in `writing/drafts/`, then publish to `writing/content/[platform]/`.
 
+### Analyze Your Writing Style
+
+Generate a style guide that captures your voice, tone, and patterns:
+
+```bash
+claude-pen analyze
+```
+
+**Features:**
+
+- Analyzes all published writing in `writing/content/`
+- Identifies patterns in sentence structure, vocabulary, tone, and formatting
+- Creates comprehensive style guide at `writing/_style_guide.md`
+- Uses style guide for all future draft generation
+
+**Workflow:**
+
+```
+writing/content/[platform]/ → analyze → writing/_style_guide.md → used by draft
+```
+
+**Examples:**
+
+```bash
+# Generate style guide from all existing content
+claude-pen analyze
+```
+
+**Next Steps:**
+After analyzing, use the style guide to generate drafts that match your voice with `claude-pen draft`.
+
+### Generate a Draft
+
+Transform raw notes into a structured draft that matches your writing style:
+
+```bash
+claude-pen draft [file]
+claude-pen draft --stdin
+```
+
+**Arguments:**
+
+- `[file]` - Path to markdown file containing raw notes (optional if using `--stdin`)
+- `--stdin` - Read input from stdin instead of a file
+- `--output, -o` - Custom output path (optional, auto-generates if not specified)
+
+**Features:**
+
+- Supports file input or stdin for multi-line text
+- Uses your style guide (`writing/_style_guide.md`) to match your voice
+- Works without a style guide (shows helpful warning)
+- Organizes unstructured ideas into coherent structure
+- Preserves your original insights and tone
+- Outputs draft ready for review and refinement
+
+**Workflow:**
+
+```
+File:  writing/raw/notes.md → draft → writing/drafts/notes.md
+Stdin: paste/pipe text → draft --stdin → writing/drafts/draft-YYYY-MM-DD.md
+```
+
+**Examples:**
+
+```bash
+# Generate draft from file
+claude-pen draft writing/raw/startup-ideas.md
+
+# Generate draft from clipboard (macOS)
+pbpaste | claude-pen draft --stdin
+
+# Generate draft from stdin with custom output
+pbpaste | claude-pen draft --stdin -o writing/drafts/my-thoughts.md
+
+# Interactive paste (paste text, then press Ctrl+D)
+claude-pen draft --stdin
+
+# Specify custom output for file
+claude-pen draft writing/raw/blog-outline.md -o writing/drafts/saas-pricing.md
+```
+
+**Next Steps:**
+After drafting, review the output in your editor, then use `claude-pen refine` to polish specific aspects.
+
 ### Coming Soon
 
-- `claude-pen analyze` - Analyze your writing style
-- `claude-pen draft <input-file>` - Generate a draft in your style
+- `claude-pen refine <draft>` - Polish and improve draft with targeted passes
 
 ## Development
 
@@ -195,14 +278,18 @@ claude-pen/
 │   ├── types.ts              # TypeScript type definitions
 │   ├── commands/             # Command implementations
 │   │   ├── init.ts           # Init command
-│   │   └── ingest.ts         # Ingest command
+│   │   ├── ingest.ts         # Ingest command
+│   │   ├── analyze.ts        # Analyze command
+│   │   └── draft.ts          # Draft command
 │   ├── lib/                  # Utility libraries
 │   │   ├── config.ts         # Configuration management
 │   │   ├── files.ts          # File utilities
 │   │   ├── llm.ts            # LLM integration
 │   │   └── prompts.ts        # Prompt management
 │   └── prompts/              # Prompt templates
-│       └── ingest.md         # Ingest metadata extraction
+│       ├── ingest.md         # Ingest metadata extraction
+│       ├── analyze.md        # Style analysis
+│       └── draft.md          # Draft generation
 ├── thoughts/                 # Research and planning docs
 └── .claude/                  # Claude Code configuration
 ```

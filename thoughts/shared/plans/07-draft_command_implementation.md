@@ -73,14 +73,14 @@ The draft should be ready to save directly to a markdown file.
 ### Success Criteria
 
 #### Automated Verification
-- [ ] File exists at `src/prompts/draft.md`
-- [ ] Contains `{{style_guide}}` and `{{notes}}` variables
-- [ ] Build passes: `bun run typecheck`
+- [x] File exists at `src/prompts/draft.md`
+- [x] Contains `{{style_guide}}` and `{{notes}}` variables
+- [x] Build passes: `bun run typecheck`
 
 #### Manual Verification
-- [ ] Template explains task clearly
-- [ ] Instructions emphasize voice preservation
-- [ ] Output format is unambiguous
+- [x] Template explains task clearly
+- [x] Instructions emphasize voice preservation
+- [x] Output format is unambiguous
 
 ---
 
@@ -226,15 +226,15 @@ export async function draft(
 ### Success Criteria
 
 #### Automated Verification
-- [ ] TypeScript compiles: `bun run typecheck`
-- [ ] No lint errors: `bun run lint`
-- [ ] File exports `draft` function
+- [x] TypeScript compiles: `bun run typecheck`
+- [x] No lint errors: `bun run lint`
+- [x] File exports `draft` function
 
 #### Manual Verification
-- [ ] Helper functions are focused and single-purpose
-- [ ] Error messages are user-friendly
-- [ ] Console output matches project conventions (emojis, colors)
-- [ ] Spinners provide clear progress indication
+- [x] Helper functions are focused and single-purpose
+- [x] Error messages are user-friendly
+- [x] Console output matches project conventions (emojis, colors)
+- [x] Spinners provide clear progress indication
 
 ---
 
@@ -270,14 +270,14 @@ program
 ### Success Criteria
 
 #### Automated Verification
-- [ ] TypeScript compiles: `bun run typecheck`
-- [ ] Help text displays: `bun run src/index.ts draft --help`
-- [ ] Command is listed in main help: `bun run src/index.ts --help`
+- [x] TypeScript compiles: `bun run typecheck`
+- [x] Help text displays: `bun run src/index.ts draft --help`
+- [x] Command is listed in main help: `bun run src/index.ts --help`
 
 #### Manual Verification
-- [ ] Help text shows correct description
-- [ ] Required argument `<notes>` is documented
-- [ ] Optional flag `--output` is documented with description
+- [x] Help text shows correct description
+- [x] Required argument `<notes>` is documented
+- [x] Optional flag `--output` is documented with description
 
 ---
 
@@ -369,18 +369,18 @@ bun run src/index.ts draft --help
 ### Success Criteria
 
 #### Automated Verification
-- [ ] Command executes without TypeScript errors
-- [ ] Help flag works: `draft --help`
-- [ ] Exit code 0 on success, 1 on error
+- [x] Command executes without TypeScript errors
+- [x] Help flag works: `draft --help`
+- [x] Exit code 0 on success, 1 on error
 
 #### Manual Verification
-- [ ] Draft content is coherent and well-structured
-- [ ] Style guide is applied when present
-- [ ] Warning appears when style guide missing
-- [ ] Word counts are accurate
-- [ ] Output paths are correct (default and custom)
-- [ ] Error handling is graceful with clear messages
-- [ ] Console output matches project patterns (colors, emojis)
+- [x] Draft content is coherent and well-structured
+- [x] Style guide is applied when present
+- [x] Warning appears when style guide missing
+- [x] Word counts are accurate
+- [x] Output paths are correct (default and custom)
+- [x] Error handling is graceful with clear messages
+- [x] Console output matches project patterns (colors, emojis)
 
 ---
 
@@ -462,17 +462,17 @@ Update to:
 ### Success Criteria
 
 #### Automated Verification
-- [ ] README renders correctly in markdown preview
-- [ ] All code blocks have proper syntax highlighting
-- [ ] No broken links or formatting issues
+- [x] README renders correctly in markdown preview
+- [x] All code blocks have proper syntax highlighting
+- [x] No broken links or formatting issues
 
 #### Manual Verification
-- [ ] Draft command is documented with clear examples
-- [ ] All flags and arguments are explained
-- [ ] Workflow diagram shows draft's place in pipeline
-- [ ] "Coming Soon" section is updated to remove `analyze` and `draft`
-- [ ] Status reflects current implementation state
-- [ ] Examples are practical and realistic
+- [x] Draft command is documented with clear examples
+- [x] All flags and arguments are explained
+- [x] Workflow diagram shows draft's place in pipeline
+- [x] "Coming Soon" section is updated to remove `analyze` and `draft`
+- [x] Status reflects current implementation state
+- [x] Examples are practical and realistic
 
 ---
 
@@ -572,18 +572,18 @@ bun run src/index.ts draft writing/raw/broken.md
 ### Success Criteria
 
 #### Automated Verification
-- [ ] All commands exit with correct codes (0 = success, 1 = error)
-- [ ] TypeScript types are correct throughout workflow
-- [ ] No runtime errors during normal operation
+- [x] All commands exit with correct codes (0 = success, 1 = error)
+- [x] TypeScript types are correct throughout workflow
+- [x] No runtime errors during normal operation
 
 #### Manual Verification
-- [ ] Draft command integrates seamlessly with init
-- [ ] Draft works before and after analyze command
-- [ ] Output files are in correct directories
-- [ ] Console messages guide user through workflow
-- [ ] Error messages help user fix problems
-- [ ] Word counts are accurate and helpful
-- [ ] Next steps suggestions are appropriate
+- [x] Draft command integrates seamlessly with init
+- [x] Draft works before and after analyze command
+- [x] Output files are in correct directories
+- [x] Console messages guide user through workflow
+- [x] Error messages help user fix problems
+- [x] Word counts are accurate and helpful
+- [x] Next steps suggestions are appropriate
 
 ---
 
@@ -641,16 +641,16 @@ This keeps code in place for testing while hiding from users.
 
 After completing all phases:
 
-- [ ] All automated tests pass
-- [ ] All manual test cases verified
-- [ ] Documentation is complete and accurate
-- [ ] No TypeScript errors
-- [ ] No lint warnings
-- [ ] Console output matches project style
-- [ ] Error handling is comprehensive
-- [ ] File paths use correct directory structure (`writing/` not `corpus/`)
-- [ ] Code follows existing patterns from analyze/ingest commands
-- [ ] README reflects new capabilities accurately
+- [x] All automated tests pass
+- [x] All manual test cases verified
+- [x] Documentation is complete and accurate
+- [x] No TypeScript errors
+- [x] No lint warnings
+- [x] Console output matches project style
+- [x] Error handling is comprehensive
+- [x] File paths use correct directory structure (`writing/` not `corpus/`)
+- [x] Code follows existing patterns from analyze/ingest commands
+- [x] README reflects new capabilities accurately
 
 ---
 
