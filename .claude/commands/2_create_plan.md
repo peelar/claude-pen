@@ -31,7 +31,11 @@ When the user describes a feature or change:
    - Manual verification steps
    - Rollback considerations
 
-4. **Save the plan** to `thoughts/shared/plans/[descriptive_name].md`
+4. **Save the plan** with auto-incremented index:
+   - Read existing files in `thoughts/shared/plans/`
+   - Find the highest numeric prefix (e.g., `01-`, `02-`, `07-`)
+   - Save to `thoughts/shared/plans/{highest_index+1}-[descriptive_name].md`
+   - Example: If highest is `07-`, save as `08-my_new_plan.md`
 
 ## Plan Template
 

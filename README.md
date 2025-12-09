@@ -16,7 +16,7 @@ Claude Pen is a CLI tool that helps you maintain consistency in your writing by 
 
 ## Status
 
-🚧 **Early Development** - Currently implements workspace initialization, content ingestion, style analysis, and draft generation. Refine command in development.
+🚧 **Early Development** - Currently implements workspace initialization, content ingestion, style analysis, draft generation, and editorial refinement passes.
 
 ## Installation
 
@@ -107,6 +107,84 @@ export OPENAI_API_KEY=your-api-key-here
 ```
 
 Add this to your `~/.bashrc`, `~/.zshrc`, or equivalent to make it permanent.
+
+## Writing Workflow
+
+claude-pen provides a simple three-step workflow for your writing:
+
+### 1. Draft - Transform Notes into Structured Content
+
+Transform raw notes into a well-structured draft that matches your writing style:
+
+```bash
+claude-pen draft raw-notes.md
+```
+
+This creates a draft in `writing/drafts/` with:
+- Clear structure and logical flow
+- Your exact words and phrasing preserved
+- Style matched to your voice (from style guide)
+- Ready for review and refinement
+
+### 2. Review - Get Improvement Suggestions (Optional)
+
+Analyze your draft and get actionable feedback:
+
+```bash
+claude-pen review writing/drafts/my-draft.md
+```
+
+This creates `my-draft-review.md` containing:
+- Overall assessment
+- Key strengths
+- Specific areas for improvement
+- Priority recommendations
+
+The review is non-destructive - your original draft is unchanged.
+
+### 3. Refine - Apply Editorial Improvements (Optional)
+
+Apply targeted editorial passes with optional tone adjustments:
+
+```bash
+# Fix grammar and polish
+claude-pen refine my-draft.md --pass proofread
+
+# Improve clarity and flow
+claude-pen refine my-draft.md --pass clarity
+
+# Make it punchier with a punchy tone
+claude-pen refine my-draft.md --pass punchier --tone punchy
+```
+
+**Refinement passes:**
+- `proofread` - Fix grammar, spelling, and awkward phrasing
+- `clarity` - Improve flow and comprehension
+- `punchier` - Tighten prose and strengthen impact
+
+**Tone options:**
+- `punchy` - Direct, impactful, concise
+- `funny` - Humorous, entertaining, lighthearted
+- `personal` - Intimate, conversational, warm
+- `professional` - Formal, polished, authoritative
+
+Each refinement creates a new timestamped file, preserving all versions.
+
+### Recommended Workflow
+
+```bash
+# 1. Create structured draft from raw notes
+claude-pen draft raw-notes.md
+
+# 2. (Optional) Get improvement suggestions
+claude-pen review writing/drafts/notes.md
+
+# 3. (Optional) Apply refinement passes
+claude-pen refine writing/drafts/notes.md --pass clarity
+claude-pen refine writing/drafts/notes-20241208-clarity.md --pass proofread --tone professional
+```
+
+---
 
 ## Available Commands
 
@@ -243,11 +321,123 @@ claude-pen draft writing/raw/blog-outline.md -o writing/drafts/saas-pricing.md
 ```
 
 **Next Steps:**
-After drafting, review the output in your editor, then use `claude-pen refine` to polish specific aspects.
+After drafting, review the output in your editor, get suggestions with `claude-pen review`, or apply refinement passes with `claude-pen refine`.
 
-### Coming Soon
+### Review Content
 
-- `claude-pen refine <draft>` - Polish and improve draft with targeted passes
+Analyze content and generate improvement suggestions:
+
+```bash
+claude-pen review <file>
+```
+
+**Arguments:**
+
+- `<file>` - Path to markdown file to review (required)
+- `--output, -o` - Custom output path for suggestions (optional, defaults to `<basename>-review.md`)
+
+**Features:**
+
+- Analyzes structure, organization, clarity, and impact
+- Provides specific, actionable suggestions
+- Explains WHY improvements are needed
+- Prioritizes most impactful changes
+- Non-destructive - creates separate review file
+
+**Workflow:**
+
+```
+content.md → review → content-review.md
+```
+
+**Examples:**
+
+```bash
+# Review a formatted file
+claude-pen review writing/drafts/my-post-formatted.md
+
+# Review with custom output path
+claude-pen review draft.md -o reviews/draft-feedback.md
+```
+
+**Next Steps:**
+After reviewing suggestions, apply improvements manually or use `claude-pen refine` to apply editorial passes.
+
+### Refine a Draft
+
+Apply editorial refinement passes to drafts with optional tone adjustment:
+
+```bash
+claude-pen refine [draft-file] [--pass <pass-type>] [--tone <tone-option>]
+```
+
+**Arguments:**
+
+- `[draft-file]` - Optional path to the draft file. If omitted, shows an interactive file selector
+- `--pass <pass-type>` - Refinement pass to apply (default: `proofread`)
+  - `proofread` - Fix grammar, spelling, and awkward phrasing
+  - `punchier` - Tighten prose and strengthen impact
+  - `clarity` - Improve flow and comprehension
+- `--tone <tone-option>` - Optional tone adjustment
+  - `punchy` - Direct, impactful, concise
+  - `funny` - Humorous, entertaining, lighthearted
+  - `personal` - Intimate, conversational, warm
+  - `professional` - Formal, polished, authoritative
+
+**Features:**
+
+- **Interactive file selection** - Omit the file path to choose from available drafts
+- Uses your style guide to preserve your unique voice
+- Creates a new file with timestamp and pass name
+- Preserves the original draft
+- Shows word count statistics and delta
+- Suggests next refinement passes
+- Each pass focuses on a specific editorial goal
+
+**Workflow:**
+
+```
+writing/drafts/post.md → refine --pass proofread → writing/drafts/post-20251208151234-proofread.md
+```
+
+**Examples:**
+
+```bash
+# Interactive mode - select from available drafts
+claude-pen refine
+# > my-post.md (1,234 words, 2 hours ago)
+#   another-draft.md (856 words, 1 day ago)
+#   startup-ideas.md (2,103 words, 3 days ago)
+
+# Interactive mode with specific pass
+claude-pen refine --pass punchier
+
+# Specify a file directly (skip interactive selection)
+claude-pen refine writing/drafts/my-post.md
+
+# Combine file path with specific pass
+claude-pen refine writing/drafts/my-post.md --pass clarity
+
+# Apply refinement with tone adjustment
+claude-pen refine my-post.md --pass proofread --tone professional
+
+# Make it punchy
+claude-pen refine my-post.md --pass punchier --tone punchy
+
+# Interactive with tone
+claude-pen refine --pass clarity --tone personal
+```
+
+**Recommended Workflow:**
+
+1. Create initial draft from notes: `claude-pen draft notes.md`
+2. Apply refinement passes as needed:
+   - `refine --pass proofread` for correctness
+   - `refine --pass punchier` for impact
+   - `refine --pass clarity` for comprehension
+3. Review and publish to `writing/content/[platform]/`
+
+**Note:** The refine command creates a new file with a timestamp and pass name, preserving your original draft. You can apply multiple passes sequentially or experiment with different passes on the same source.
 
 ## Development
 
@@ -280,7 +470,9 @@ claude-pen/
 │   │   ├── init.ts           # Init command
 │   │   ├── ingest.ts         # Ingest command
 │   │   ├── analyze.ts        # Analyze command
-│   │   └── draft.ts          # Draft command
+│   │   ├── draft.ts          # Draft command
+│   │   ├── review.ts         # Review command
+│   │   └── refine.ts         # Refine command
 │   ├── lib/                  # Utility libraries
 │   │   ├── config.ts         # Configuration management
 │   │   ├── files.ts          # File utilities
@@ -289,7 +481,11 @@ claude-pen/
 │   └── prompts/              # Prompt templates
 │       ├── ingest.md         # Ingest metadata extraction
 │       ├── analyze.md        # Style analysis
-│       └── draft.md          # Draft generation
+│       ├── draft.md          # Draft generation
+│       ├── review.md         # Review and suggestions
+│       ├── proofread.md      # Proofread refinement pass
+│       ├── punchier.md       # Punchier refinement pass
+│       └── clarity.md        # Clarity refinement pass
 ├── thoughts/                 # Research and planning docs
 └── .claude/                  # Claude Code configuration
 ```

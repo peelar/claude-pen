@@ -4,6 +4,8 @@ import { init } from './commands/init.js';
 import { ingest } from './commands/ingest.js';
 import { analyze } from './commands/analyze.js';
 import { draft } from './commands/draft.js';
+import { review } from './commands/review.js';
+import { refine } from './commands/refine.js';
 
 const program = new Command();
 
@@ -61,6 +63,35 @@ program
   .action(async (file, options) => {
     try {
       await draft(file, options);
+      process.exit(0);
+    } catch (error) {
+      console.error('Command failed:', error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('review <file>')
+  .description('Analyze content and generate improvement suggestions')
+  .option('-o, --output <path>', 'Output file path for suggestions (default: <basename>-review.md)')
+  .action(async (file, options) => {
+    try {
+      await review(file, options);
+      process.exit(0);
+    } catch (error) {
+      console.error('Command failed:', error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('refine [draft]')
+  .description('Apply editorial refinement pass to a draft')
+  .option('--pass <pass>', 'Refinement pass: proofread, punchier, clarity', 'proofread')
+  .option('--tone <tone>', 'Tone adjustment: punchy, funny, personal, professional')
+  .action(async (draft, options) => {
+    try {
+      await refine(draft, options);
       process.exit(0);
     } catch (error) {
       console.error('Command failed:', error);
