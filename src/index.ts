@@ -6,6 +6,8 @@ import { analyze } from './commands/analyze.js';
 import { draft } from './commands/draft.js';
 import { review } from './commands/review.js';
 import { refine } from './commands/refine.js';
+import { ship } from './commands/ship.js';
+import { clean } from './commands/clean.js';
 
 const program = new Command();
 
@@ -90,13 +92,39 @@ program
   });
 
 program
-  .command('refine [draft]')
-  .description('Apply editorial refinement pass to a draft')
-  .option('--pass <pass>', 'Refinement pass: proofread, punchier, clarity', 'proofread')
-  .option('--tone <tone>', 'Tone adjustment: punchy, funny, personal, professional')
+  .command('refine [draft] [instruction]')
+  .description('Refine draft based on review feedback and/or custom instructions')
+  .option('-o, --output <path>', 'Output file path (default: <basename>-<timestamp>-refined.md)')
+  .action(async (draft, instruction, options) => {
+    try {
+      await refine(draft, instruction, options);
+      process.exit(0);
+    } catch (error) {
+      console.error('Command failed:', error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('ship <draft>')
+  .description('Create promotional posts for social media')
+  .option('--url <url>', 'URL to the published content (optional)')
   .action(async (draft, options) => {
     try {
-      await refine(draft, options);
+      await ship(draft, options);
+      process.exit(0);
+    } catch (error) {
+      console.error('Command failed:', error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('clean')
+  .description('Delete all draft files in writing/drafts/')
+  .action(async () => {
+    try {
+      await clean();
       process.exit(0);
     } catch (error) {
       console.error('Command failed:', error);

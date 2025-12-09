@@ -1,9 +1,5 @@
 export type Platform = 'blog' | 'linkedin' | 'substack' | 'twitter';
 
-export type RefinePass = 'proofread' | 'punchier' | 'clarity';
-
-export type ToneOption = 'punchy' | 'funny' | 'personal' | 'professional';
-
 export interface ClaudePenConfig {
   author: string;
   llm: {

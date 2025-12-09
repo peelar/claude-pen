@@ -6,29 +6,10 @@ import { select } from '@inquirer/prompts';
 import { getPath, countWords } from '../lib/files.js';
 import { loadPrompt, interpolate } from '../lib/prompts.js';
 import { complete } from '../lib/llm.js';
-import type { RefinePass, ToneOption } from '../types.js';
 
 interface RefineOptions {
-  pass?: RefinePass;
-  tone?: ToneOption;
+  output?: string;
 }
-
-const VALID_PASSES: RefinePass[] = ['proofread', 'punchier', 'clarity'];
-
-const PASS_DESCRIPTIONS: Record<RefinePass, string> = {
-  proofread: 'Fixing grammar, spelling, and awkward phrasing',
-  punchier: 'Tightening prose and strengthening impact',
-  clarity: 'Improving flow and comprehension',
-};
-
-const VALID_TONES: ToneOption[] = ['punchy', 'funny', 'personal', 'professional'];
-
-const TONE_DESCRIPTIONS: Record<ToneOption, string> = {
-  punchy: 'direct, impactful, concise',
-  funny: 'humorous, entertaining, lighthearted',
-  personal: 'intimate, conversational, warm',
-  professional: 'formal, polished, authoritative',
-};
 
 const STYLE_GUIDE_PATH = 'writing/_style_guide.md';
 
@@ -45,9 +26,29 @@ function loadStyleGuide(): string {
 }
 
 /**
- * Generate output filename with timestamp and pass
+ * Load review feedback if it exists
  */
-function generateOutputPath(inputPath: string, pass: RefinePass): string {
+function loadReviewFeedback(draftPath: string): string | null {
+  const dir = path.dirname(draftPath);
+  const ext = path.extname(draftPath);
+  const basename = path.basename(draftPath, ext);
+  const reviewPath = path.join(dir, `${basename}-review${ext}`);
+
+  if (fs.existsSync(reviewPath)) {
+    return fs.readFileSync(reviewPath, 'utf-8');
+  }
+
+  return null;
+}
+
+/**
+ * Generate output filename with timestamp
+ */
+function generateOutputPath(inputPath: string, explicitOutput?: string): string {
+  if (explicitOutput) {
+    return explicitOutput;
+  }
+
   const dir = path.dirname(inputPath);
   const ext = path.extname(inputPath);
   const basename = path.basename(inputPath, ext);
@@ -63,7 +64,7 @@ function generateOutputPath(inputPath: string, pass: RefinePass): string {
     String(now.getSeconds()).padStart(2, '0')
   ].join('');
 
-  return path.join(dir, `${basename}-${timestamp}-${pass}${ext}`);
+  return path.join(dir, `${basename}-${timestamp}-refined${ext}`);
 }
 
 interface FileChoice {
@@ -174,24 +175,11 @@ async function selectDraftFile(): Promise<string> {
   return selected;
 }
 
-export async function refine(draftArg: string | undefined, options: RefineOptions): Promise<void> {
-  // Determine pass
-  const pass: RefinePass = options.pass || 'proofread';
-
-  // Validate pass
-  if (!VALID_PASSES.includes(pass)) {
-    console.error(chalk.red(`Invalid pass: ${pass}`));
-    console.error(`Valid options: ${VALID_PASSES.join(', ')}`);
-    process.exit(1);
-  }
-
-  // Validate tone if provided
-  if (options.tone && !VALID_TONES.includes(options.tone)) {
-    console.error(chalk.red(`Invalid tone: ${options.tone}`));
-    console.error(`Valid options: ${VALID_TONES.join(', ')}`);
-    process.exit(1);
-  }
-
+export async function refine(
+  draftArg: string | undefined,
+  customInstruction: string | undefined,
+  options: RefineOptions
+): Promise<void> {
   // Resolve file path - either from argument or interactive selection
   let draftPath: string;
 
@@ -206,11 +194,22 @@ export async function refine(draftArg: string | undefined, options: RefineOption
     draftPath = await selectDraftFile();
   }
 
-  console.log(chalk.bold(`\n📝 Refining draft: ${path.basename(draftPath)}`));
-  console.log(chalk.dim(`   Pass: ${pass}`));
-  if (options.tone) {
-    console.log(chalk.dim(`   Tone: ${options.tone} (${TONE_DESCRIPTIONS[options.tone]})`));
+  console.log(chalk.bold(`\n✨ Refining draft: ${path.basename(draftPath)}`));
+
+  // Load review feedback if it exists
+  const reviewFeedback = loadReviewFeedback(draftPath);
+  if (reviewFeedback) {
+    console.log(chalk.dim('   📋 Review feedback found and will be applied'));
   }
+
+  if (customInstruction) {
+    console.log(chalk.dim(`   💬 Custom instruction: "${customInstruction}"`));
+  }
+
+  if (!reviewFeedback && !customInstruction) {
+    console.log(chalk.dim('   ℹ️  No review or instruction provided - applying general improvement'));
+  }
+
   console.log();
 
   // Load style guide
@@ -221,21 +220,19 @@ export async function refine(draftArg: string | undefined, options: RefineOption
   const originalWords = countWords(content);
 
   // Load and interpolate prompt
-  const promptTemplate = loadPrompt(pass);
+  const promptTemplate = loadPrompt('refine');
   const prompt = interpolate(promptTemplate, {
     style_guide: styleGuide,
     content: content,
+    review_feedback: reviewFeedback || 'No review feedback available.',
+    custom_instruction: customInstruction || 'Apply general improvements to enhance clarity, flow, and impact.',
   });
 
-  // Apply refinement pass
-  const spinner = ora(`${PASS_DESCRIPTIONS[pass]}...`).start();
+  // Apply refinement
+  const spinner = ora('Refining content...').start();
 
   try {
-    let systemMessage = `You are a skilled editor helping improve writing while preserving the author's unique voice. Apply the ${pass} refinement pass carefully.`;
-
-    if (options.tone) {
-      systemMessage += ` Adjust the tone to be ${TONE_DESCRIPTIONS[options.tone]}.`;
-    }
+    const systemMessage = 'You are a skilled editor helping improve writing while preserving the author\'s unique voice. Apply the refinements carefully based on the provided feedback and instructions.';
 
     const refined = await complete(prompt, {
       system: systemMessage,
@@ -243,10 +240,10 @@ export async function refine(draftArg: string | undefined, options: RefineOption
       silent: true,
     });
 
-    spinner.succeed(`${pass} pass complete`);
+    spinner.succeed('Refinement complete');
 
-    // Generate output path with timestamp and pass
-    const outputPath = generateOutputPath(draftPath, pass);
+    // Generate output path with timestamp
+    const outputPath = generateOutputPath(draftPath, options.output);
 
     // Write refined content to new file
     fs.writeFileSync(outputPath, refined, 'utf-8');
@@ -262,20 +259,14 @@ export async function refine(draftArg: string | undefined, options: RefineOption
     console.log(chalk.dim(`  Refined:  ${newWords} words (${diffStr})`));
 
     // Suggest next steps
-    const otherPasses = VALID_PASSES.filter(p => p !== pass);
-    if (otherPasses.length > 0) {
-      console.log(chalk.dim('\nApply another pass to the refined version:'));
-      for (const otherPass of otherPasses) {
-        console.log(chalk.cyan(`  claude-pen refine ${outputPath} --pass ${otherPass}`));
-      }
-    }
-
-    console.log(chalk.dim('\nOr review and publish:'));
+    console.log(chalk.dim('\nNext steps:'));
     console.log(chalk.cyan(`  open ${outputPath}`));
+    console.log(chalk.dim('\nApply another round of refinement:'));
+    console.log(chalk.cyan(`  claude-pen refine ${outputPath} "your custom instruction"`));
     console.log();
 
   } catch (error) {
-    spinner.fail(`${pass} pass failed`);
+    spinner.fail('Refinement failed');
     throw error;
   }
 }

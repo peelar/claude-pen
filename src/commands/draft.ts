@@ -159,8 +159,7 @@ export async function draft(
   console.log(chalk.bold('\n📝 Next Steps:'));
   console.log(chalk.dim('  Review and edit:'));
   console.log(chalk.cyan(`  open ${outputPath}`));
-  console.log(chalk.dim('\n  Refine with additional passes:'));
-  console.log(chalk.cyan(`  claude-pen refine ${outputPath} --pass proofread`));
-  console.log(chalk.cyan(`  claude-pen refine ${outputPath} --pass clarity`));
+  console.log(chalk.dim('\n  Get AI feedback:'));
+  console.log(chalk.cyan(`  claude-pen review ${outputPath}`));
   console.log();
 }
