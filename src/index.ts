@@ -12,7 +12,12 @@ const program = new Command();
 program
   .name('claude-pen')
   .description('AI-powered writing assistant that learns your voice')
-  .version('0.1.0');
+  .version('0.1.0')
+  .configureHelp({
+    helpWidth: Math.min(process.stdout.columns || 80, 100),
+    sortSubcommands: false,
+    sortOptions: false,
+  });
 
 program
   .command('init')
