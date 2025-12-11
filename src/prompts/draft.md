@@ -20,6 +20,10 @@ Your job is to clean up the artifacts of speech-to-text, cut the fat, and distil
 
 {{style_guide}}
 
+# Custom Instructions
+
+{{custom_instruction}}
+
 # Raw Notes
 
 {{notes}}

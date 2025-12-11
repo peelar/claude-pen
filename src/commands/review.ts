@@ -5,10 +5,7 @@ import ora from 'ora';
 import { countWords } from '../lib/files.js';
 import { loadPrompt, interpolate } from '../lib/prompts.js';
 import { complete } from '../lib/llm.js';
-
-interface ReviewOptions {
-  output?: string;
-}
+import type { ReviewOptions } from '../types.js';
 
 /**
  * Generate output filename for review suggestions
@@ -52,11 +49,20 @@ export async function review(
   const wordCount = countWords(content);
   spinner.succeed(`Read ${chalk.green(wordCount)} words`);
 
+  // Extract custom instruction
+  const customInstruction = options.instruct;
+
+  if (customInstruction) {
+    console.log(chalk.dim(`   💬 Custom instruction: "${customInstruction}"`));
+    console.log();
+  }
+
   // Load and interpolate prompt
   const spinner2 = ora('Analyzing content').start();
   const promptTemplate = loadPrompt('review');
   const prompt = interpolate(promptTemplate, {
     content: content,
+    custom_instruction: customInstruction || 'Provide constructive feedback on structure, clarity, and impact.',
   });
 
   // Generate review via LLM

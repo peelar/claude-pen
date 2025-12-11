@@ -3,13 +3,10 @@ import path from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
 import { select } from '@inquirer/prompts';
-import { getPath, countWords } from '../lib/files.js';
+import { getPath, countWords, readMarkdown, writeMarkdown } from '../lib/files.js';
 import { loadPrompt, interpolate } from '../lib/prompts.js';
 import { complete } from '../lib/llm.js';
-
-interface RefineOptions {
-  output?: string;
-}
+import type { RefineOptions } from '../types.js';
 
 const STYLE_GUIDE_PATH = 'writing/_style_guide.md';
 
@@ -215,8 +212,8 @@ export async function refine(
   // Load style guide
   const styleGuide = loadStyleGuide();
 
-  // Read draft content
-  const content = fs.readFileSync(draftPath, 'utf-8');
+  // Read draft content with frontmatter
+  const { frontmatter, content } = readMarkdown(draftPath);
   const originalWords = countWords(content);
 
   // Load and interpolate prompt
@@ -245,8 +242,8 @@ export async function refine(
     // Generate output path with timestamp
     const outputPath = generateOutputPath(draftPath, options.output);
 
-    // Write refined content to new file
-    fs.writeFileSync(outputPath, refined, 'utf-8');
+    // Write refined content to new file with preserved frontmatter
+    writeMarkdown(outputPath, frontmatter, refined.trim());
 
     // Calculate statistics
     const newWords = countWords(refined);

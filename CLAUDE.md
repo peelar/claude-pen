@@ -69,6 +69,43 @@ import type { Config } from './types';
 import { loadConfig } from './lib/config';
 ```
 
+## Format-Aware Pipeline
+
+All drafts include format metadata in frontmatter, enabling the pipeline to adapt behavior based on the target platform.
+
+### Metadata Structure
+
+```yaml
+---
+format: blog | linkedin | twitter | substack
+created: 2025-12-10T10:30:00Z
+source: notes.md
+word_count: 1250
+---
+```
+
+### Impact on Commands
+
+- **`draft`**: Writes format to frontmatter via `--format` flag (defaults to `blog`)
+- **`refine`**: Preserves format in frontmatter through `readMarkdown`/`writeMarkdown`
+- **`ship`**: Reads format and adapts behavior:
+  - `blog` format → creates promotional posts (`draft-linkedin.md`, `draft-twitter.md`)
+  - Social formats (`linkedin`, `twitter`) → finalizes for publishing (updates draft in place)
+
+### Format Behavior Matrix
+
+| Format | Draft Behavior | Ship Behavior |
+|--------|----------------|---------------|
+| `blog` (default) | Creates blog post | Generates promotional posts for LinkedIn + Twitter |
+| `linkedin` | Creates LinkedIn post | Finalizes LinkedIn formatting, no promotional posts |
+| `twitter` | Creates Twitter thread | Finalizes thread, ensures 280 char limits |
+| `substack` | Creates Substack article | Finalizes Substack formatting |
+
+### Prompts
+
+- **Promotional**: `src/prompts/ship/{platform}.md` - Used for blog → social promotion
+- **Finalization**: `src/prompts/ship/{platform}-finalize.md` - Used for social-first workflow
+
 ## Research → Plan → Implement Workflow
 
 This project uses a structured workflow for all feature development and changes:

@@ -67,8 +67,19 @@ program
   .description('Transform raw notes into a structured draft')
   .option('--stdin', 'Read input from stdin instead of a file')
   .option('-o, --output <path>', 'Output file path (default: writing/drafts/<basename>.md or draft-<date>.md)')
+  .option('-f, --format <format>', 'Target format: blog, linkedin, twitter, substack (default: blog)')
+  .option('-i, --instruct <instruction>', 'Custom instructions for the LLM')
   .action(async (file, options) => {
     try {
+      // Validate format if provided
+      if (options.format) {
+        const validFormats = ['blog', 'linkedin', 'twitter', 'substack'];
+        if (!validFormats.includes(options.format)) {
+          console.error(`Invalid format: ${options.format}`);
+          console.error(`Valid formats: ${validFormats.join(', ')}`);
+          process.exit(1);
+        }
+      }
       await draft(file, options);
       process.exit(0);
     } catch (error) {
@@ -81,6 +92,7 @@ program
   .command('review <file>')
   .description('Analyze content and generate improvement suggestions')
   .option('-o, --output <path>', 'Output file path for suggestions (default: <basename>-review.md)')
+  .option('-i, --instruct <instruction>', 'Custom instructions for the LLM')
   .action(async (file, options) => {
     try {
       await review(file, options);
@@ -95,9 +107,12 @@ program
   .command('refine [draft] [instruction]')
   .description('Refine draft based on review feedback and/or custom instructions')
   .option('-o, --output <path>', 'Output file path (default: <basename>-<timestamp>-refined.md)')
+  .option('-i, --instruct <instruction>', 'Custom instructions (alternative to positional arg)')
   .action(async (draft, instruction, options) => {
     try {
-      await refine(draft, instruction, options);
+      // Merge positional and named option (positional takes precedence for backward compat)
+      const finalInstruction = instruction || options.instruct;
+      await refine(draft, finalInstruction, options);
       process.exit(0);
     } catch (error) {
       console.error('Command failed:', error);
@@ -107,8 +122,8 @@ program
 
 program
   .command('ship <draft>')
-  .description('Create promotional posts for social media')
-  .option('--url <url>', 'URL to the published content (optional)')
+  .description('Finalize draft for publishing or create promotional posts')
+  .option('-i, --instruct <instruction>', 'Custom instructions for the LLM')
   .action(async (draft, options) => {
     try {
       await ship(draft, options);

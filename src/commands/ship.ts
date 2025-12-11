@@ -3,17 +3,14 @@ import path from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
 import { complete } from '../lib/llm.js';
-import { getPath, ensureDir } from '../lib/files.js';
+import { getPath, readMarkdown, writeMarkdown } from '../lib/files.js';
 import { loadPrompt, interpolate } from '../lib/prompts.js';
-
-interface ShipOptions {
-  url?: string;
-}
+import type { ContentFormat, ShipOptions } from '../types.js';
 
 type Platform = 'linkedin' | 'twitter';
 
 const PLATFORMS: Platform[] = ['linkedin', 'twitter'];
-const STYLE_GUIDE_PATH = 'corpus/_style_guide.md';
+const STYLE_GUIDE_PATH = 'writing/_style_guide.md';
 
 /**
  * Load the style guide from corpus directory
@@ -46,29 +43,14 @@ async function createPromoPost(
   content: string,
   platform: Platform,
   styleGuide: string,
-  url?: string
+  customInstruction?: string
 ): Promise<string> {
   const promptTemplate = loadPrompt(`ship/${platform}`);
 
-  // Simple conditional replacement for {{#if url}}...{{/if}} blocks
-  let processedTemplate = promptTemplate;
-  if (url) {
-    // Remove {{else}} blocks and keep {{#if url}} content
-    processedTemplate = processedTemplate
-      .replace(/\{\{#if url\}\}([\s\S]*?)\{\{else\}\}[\s\S]*?\{\{\/if\}\}/g, '$1')
-      .replace(/\{\{#if url\}\}/g, '')
-      .replace(/\{\{\/if\}\}/g, '');
-  } else {
-    // Remove {{#if url}} blocks and keep {{else}} content
-    processedTemplate = processedTemplate
-      .replace(/\{\{#if url\}\}[\s\S]*?\{\{else\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1')
-      .replace(/\{\{#if url\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-  }
-
-  const prompt = interpolate(processedTemplate, {
+  const prompt = interpolate(promptTemplate, {
     style_guide: styleGuide,
     content: content,
-    url: url || '',
+    custom_instruction: customInstruction || 'Create engaging promotional content that drives clicks.',
   });
 
   return complete(prompt, {
@@ -78,29 +60,27 @@ async function createPromoPost(
 }
 
 /**
- * Ship command - create promotional posts for social media
+ * Ship blog post - create promotional posts for social media
  */
-export async function ship(draftPath: string, options: ShipOptions): Promise<void> {
-  // Validate input file
-  if (!fs.existsSync(draftPath)) {
-    console.error(chalk.red(`File not found: ${draftPath}`));
-    process.exit(1);
-  }
-
+async function shipBlogPost(
+  draftPath: string,
+  content: string,
+  options: ShipOptions
+): Promise<void> {
   console.log(chalk.bold('\n📤 Creating promotional posts\n'));
   console.log(chalk.dim(`  Source: ${draftPath}`));
-  if (options.url) {
-    console.log(chalk.dim(`  Link: ${options.url}`));
-  } else {
-    console.log(chalk.dim(`  Link: Not provided (will use fallback)`));
-  }
-  console.log();
-
-  // Read input
-  const content = fs.readFileSync(draftPath, 'utf-8');
+  console.log(chalk.dim(`  Note: Posts will include URL placeholder - replace before publishing\n`));
 
   // Load style guide
   const styleGuide = loadStyleGuide();
+
+  // Extract custom instruction
+  const customInstruction = options.instruct;
+
+  if (customInstruction) {
+    console.log(chalk.dim(`   💬 Custom instruction: "${customInstruction}"`));
+    console.log();
+  }
 
   // Create promotional posts for each platform
   const results: { platform: Platform; path: string }[] = [];
@@ -109,7 +89,7 @@ export async function ship(draftPath: string, options: ShipOptions): Promise<voi
     const spinner = ora(`Creating ${platform} post...`).start();
 
     try {
-      const promoPost = await createPromoPost(content, platform, styleGuide, options.url);
+      const promoPost = await createPromoPost(content, platform, styleGuide, customInstruction);
       const outputPath = getOutputPath(draftPath, platform);
 
       fs.writeFileSync(outputPath, promoPost.trim());
@@ -133,5 +113,87 @@ export async function ship(draftPath: string, options: ShipOptions): Promise<voi
     console.log(chalk.dim('  1. Review each post'));
     console.log(chalk.dim('  2. Copy to respective platform'));
     console.log(chalk.dim('  3. Post and engage with responses'));
+  }
+}
+
+/**
+ * Ship social content - finalize for specific platform
+ */
+async function shipSocialContent(
+  draftPath: string,
+  content: string,
+  format: ContentFormat,
+  options: ShipOptions
+): Promise<void> {
+  console.log(chalk.bold(`\n📤 Finalizing ${format} post\n`));
+  console.log(chalk.dim(`  Source: ${draftPath}`));
+  console.log();
+
+  const spinner = ora(`Preparing final ${format} version...`).start();
+
+  // Load style guide
+  const styleGuide = loadStyleGuide();
+
+  // Extract custom instruction
+  const customInstruction = options.instruct;
+
+  if (customInstruction) {
+    console.log(chalk.dim(`   💬 Custom instruction: "${customInstruction}"`));
+    console.log();
+  }
+
+  // Load format-specific finalization prompt
+  const promptTemplate = loadPrompt(`ship/${format}-finalize`);
+  const prompt = interpolate(promptTemplate, {
+    style_guide: styleGuide,
+    content: content,
+    custom_instruction: customInstruction || 'Finalize the content for publication with platform-specific formatting.',
+  });
+
+  try {
+    const finalContent = await complete(prompt, {
+      system: `You are finalizing content for ${format}, ensuring it meets platform best practices.`,
+      maxTokens: 2000,
+    });
+
+    // Update draft in place
+    const { frontmatter } = readMarkdown(draftPath);
+    writeMarkdown(draftPath, frontmatter, finalContent.trim());
+
+    spinner.succeed(`${format} post finalized`);
+
+    // Summary
+    console.log(chalk.green('\n✓ Post Ready to Publish'));
+    console.log(chalk.dim(`  File: ${draftPath}`));
+    console.log(chalk.bold('\n📝 Next Steps:'));
+    console.log(chalk.dim(`  1. Review the final ${format} post`));
+    console.log(chalk.dim(`  2. Copy content to ${format}`));
+    console.log(chalk.dim(`  3. Publish and engage`));
+  } catch (error) {
+    spinner.fail('Finalization failed');
+    console.error(chalk.dim(`  ${error}`));
+    process.exit(1);
+  }
+}
+
+/**
+ * Ship command - create promotional posts or finalize social content
+ */
+export async function ship(draftPath: string, options: ShipOptions): Promise<void> {
+  // Validate input file
+  if (!fs.existsSync(draftPath)) {
+    console.error(chalk.red(`File not found: ${draftPath}`));
+    process.exit(1);
+  }
+
+  // Read draft and detect format
+  const { frontmatter, content } = readMarkdown(draftPath);
+  const format = (frontmatter.format as ContentFormat) || 'blog';
+
+  // Branch based on format
+  if (format === 'blog') {
+    await shipBlogPost(draftPath, content, options);
+  } else {
+    await shipSocialContent(draftPath, content, format, options);
   }
 }

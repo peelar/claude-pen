@@ -71,6 +71,10 @@ Structure your review as follows:
 - Prioritize the most impactful changes
 - Do NOT rewrite content - only suggest improvements
 
+## Custom Instructions
+
+{{custom_instruction}}
+
 ## Content to Review
 
 {{content}}
